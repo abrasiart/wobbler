@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Visualizador 3D Paviloche</title>
+    <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #fdf4f6;
+            text-align: center;
+            color: #ffffff;
+            background-image: url('bg.png'); /* Certifique-se de que 'bg.png' está no mesmo diretório ou caminho correto */
+            background-size: cover;
+            background-repeat: repeat;
+            background-position: center;
+        }
+        header {
+            padding: 20px;
+        }
+        .logo {
+            max-width: 220px;
+        }
+        h1 {
+            margin-top: 10px;
+            color: #d28594;
+        }
+        /* Estilos para o título do produto e botões de opção */
+        .produto-header {
+            background-color: rgba(69,73,156,0.85);
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+        }
+        .produto-header h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        .botoes-opcoes-container {
+            margin-bottom: 15px;
+        }
+        .botoes-opcoes-container button {
+            background-color: #fac79c;
+            color: #4a235a;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: bold;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .botoes-opcoes-container button:hover {
+            background-color: #cca283;
+        }
+        .botoes-opcoes-container button.active {
+            background-color: #cca283;
+            color: white;
+        }
+
+        /* Estilos do visualizador 3D */
+        .viewer-container {
+            margin: 30px auto;
+            max-width: 600px;
+            height: 500px;
+            background-color: transparent;
+        }
+        model-viewer {
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+            --background-color: transparent;
+        }
+
+        /* Estilos para o novo formulário de observações */
+        .observacoes-container {
+            margin: 40px auto;
+            max-width: 600px;
+            background-color: rgba(69,73,156,0.85);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-align: center;
+            color: white;
+        }
+        .observacoes-container h2 {
+            color: white;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+        .observacoes-container textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1em;
+            resize: vertical;
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+        .observacoes-container button[type="submit"] {
+            background-color: #fac79c;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+        .observacoes-container button[type="submit"]:hover {
+            background-color: #cca283;
+        }
+        /* Mensagem de status para o formulário */
+        .form-status-message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .form-status-message.success {
+            background-color: #4CAF50; /* Verde */
+        }
+        .form-status-message.error {
+            background-color: #f44336; /* Vermelho */
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="logo.png" alt="Logo Paviloche" class="logo"/>
+    </header>
+
+    <div class="produto-header">
+        <h2>Caixa Multipack Picolés Frutas</h2>
+        <div class="botoes-opcoes-container">
+            <button id="opcao1Btn" class="active">OPÇÃO 1</button>
+            <button id="opcao2Btn">OPÇÃO 2</button>
+            <button id="opcao3Btn">OPÇÃO 3</button>
+        </div>
+    </div>
+
+    <div class="viewer-container">
+        <model-viewer id="modelViewer" src="pck_frutas.glb" alt="Multipack" auto-rotate camera-controls background-color="#fff"></model-viewer>
+    </div>
+
+    <div class="observacoes-container">
+        <h2>Deixe suas considerações</h2>
+        <form id="observacoesForm"> 
+            <textarea id="campoObservacoes" name="observacao" rows="6" placeholder="Escreva seu nome e suas observações" required></textarea>
+            
+            <input type="hidden" name="modelo_nome" id="modeloNomeHidden">
+            <input type="hidden" name="opcao_selecionada" id="opcaoSelecionadaHidden">
+
+            <button type="submit">ENVIAR</button>
+            <div id="formStatusMessage" class="form-status-message" style="display: none;"></div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const modelViewer = document.getElementById('modelViewer');
+            const opcao1Btn = document.getElementById('opcao1Btn');
+            const opcao2Btn = document.getElementById('opcao2Btn');
+            const opcao3Btn = document.getElementById('opcao3Btn');
+            const botoesOpcao = document.querySelectorAll('.botoes-opcoes-container button');
+
+            const modeloNomeHidden = document.getElementById('modeloNomeHidden');
+            const opcaoSelecionadaHidden = document.getElementById('opcaoSelecionadaHidden');
+            
+            const models = {
+                'opcao1Btn': 'pck_frutas.glb',
+                'opcao2Btn': 'pck_frutas2.glb',
+                'opcao3Btn': 'pck_frutas3.glb'
+            };
+
+            function setActiveOption(buttonId) {
+                botoesOpcao.forEach(btn => btn.classList.remove('active'));
+                const currentButton = document.getElementById(buttonId);
+                if (currentButton) {
+                    currentButton.classList.add('active');
+                    modelViewer.src = models[buttonId];
+
+                    modeloNomeHidden.value = modelViewer.src.split('/').pop();
+                    opcaoSelecionadaHidden.value = currentButton.textContent;
+                }
+            }
+
+            opcao1Btn.addEventListener('click', () => setActiveOption('opcao1Btn'));
+            opcao2Btn.addEventListener('click', () => setActiveOption('opcao2Btn'));
+            opcao3Btn.addEventListener('click', () => setActiveOption('opcao3Btn'));
+
+            setActiveOption('opcao1Btn');
+
+            // --- Gerenciamento do Formulário Formspree com AJAX ---
+            const observacoesForm = document.getElementById('observacoesForm');
+            const campoObservacoes = document.getElementById('campoObservacoes');
+            const formStatusMessage = document.getElementById('formStatusMessage'); // O novo elemento de mensagem
+
+            // Função para exibir mensagem de status
+            function showStatusMessage(message, type) {
+                formStatusMessage.textContent = message;
+                formStatusMessage.className = 'form-status-message ' + type;
+                formStatusMessage.style.display = 'block';
+                // Opcional: esconder a mensagem após alguns segundos
+                setTimeout(() => {
+                    formStatusMessage.style.display = 'none';
+                }, 5000); // Esconde após 5 segundos
+            }
+
+            observacoesForm.addEventListener('submit', async (event) => {
+                event.preventDefault(); // IMPEDE O COMPORTAMENTO PADRÃO DE RECARREGAR A PÁGINA
+
+                if (campoObservacoes.value.trim() === '') {
+                    showStatusMessage('Por favor, digite suas observações antes de enviar.', 'error');
+                    return;
+                }
+
+                const formData = new FormData(observacoesForm); // Coleta todos os dados do formulário
+                
+                try {
+                    const response = await fetch('https://formspree.io/f/mdkdzdkp', {
+                        method: 'POST',
+                        body: formData, // Envia o FormData
+                        headers: {
+                            'Accept': 'application/json' // Importante para o Formspree responder com JSON para AJAX
+                        }
+                    });
+
+                    if (response.ok) { // Verifica se a resposta foi um sucesso (status 2xx)
+                        showStatusMessage('Observações enviadas com sucesso! Obrigado pelo seu feedback.', 'success');
+                        campoObservacoes.value = ''; // Limpa o campo
+                    } else {
+                        // Trata erros específicos do Formspree ou outros erros HTTP
+                        const data = await response.json();
+                        if (data.errors) {
+                            showStatusMessage('Erro ao enviar: ' + data.errors.map(err => err.message).join(', '), 'error');
+                        } else {
+                            showStatusMessage('Ocorreu um erro ao enviar as observações. Por favor, tente novamente.', 'error');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Erro de rede ou envio:', error);
+                    showStatusMessage('Erro de conexão. Por favor, verifique sua internet e tente novamente.', 'error');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
